@@ -178,6 +178,39 @@
     .bad, .danger { color: var(--status-bad); }
     .warn { color: var(--status-warn); }
     code { color: #60a5fa; background: rgba(96, 165, 250, 0.1); padding: 2px 4px; border-radius: 4px; }
+  /* Enhanced Done Screen */
+    #done-ui {
+      display: none; flex-direction: column; align-items: center; gap: 16px;
+      animation: slideUp 0.4s ease-out forwards;
+    }
+    .success-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--status-ok-bg); color: var(--status-ok);
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.3);
+    }
+    .success-icon svg { width: 32px; height: 32px; stroke-width: 2.5; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    
+    #done-ui h3 { margin: 0; font-size: 24px; color: #fff; letter-spacing: 0.05em; }
+    #done-ui p { margin: 0; font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+    
+    .instruction-box {
+      margin-top: 8px; padding: 16px; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-light);
+      color: var(--text-primary); font-weight: 500;
+    }
+    .instruction-box b { color: var(--accent-blue); }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Override JS behavior when done */
+    body.done #spin { display: none; }
+    body.done #msg { display: none !important; } /* Hide the default "DONE" text */
+    body.done #done-ui { display: flex; } /* Show our custom UI instead */
   </style>
 </head>
 <body>
@@ -240,6 +273,18 @@
       <div id="execution-ui">
         <div id="spin"></div>
         <div id="msg">Restart your console</div>
+        
+        <!-- Premium Done Screen -->
+        <div id="done-ui">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h3>SYSTEM BREACHED</h3>
+          <p>Payload successfully injected into kernel memory.</p>
+          <div class="instruction-box">
+            Press the <b>[PS]</b> button on your controller to return to the Home Screen.
+          </div>
+        </div>
       </div>
 
       <!-- Log Terminal State -->
@@ -295,7 +340,16 @@
     /* Offline Cache Verification */
     function updateCacheStatus() {
       const ac = window.applicationCache;
-      if (!ac || !navigator.onLine && ac.status !== ac.UNCACHED) {
+      
+      // If the browser doesn't support applicationCache (like modern phones/PCs)
+      if (!ac) {
+         cacheBadgeSpan.innerText = "API Missing";
+         cacheBadge.className = "badge warn";
+         return;
+      }
+
+      // PS4 specific logic
+      if (!navigator.onLine && ac.status !== ac.UNCACHED) {
          cacheBadgeSpan.innerText = "Secured (Offline)";
          cacheBadge.className = "badge ok";
       } else if (ac.status === ac.IDLE || ac.status === ac.UPDATEREADY) {
@@ -304,6 +358,9 @@
       } else if (ac.status === ac.UNCACHED || ac.status === ac.OBSOLETE) {
          cacheBadgeSpan.innerText = "Not Cached";
          cacheBadge.className = "badge bad";
+      } else {
+         cacheBadgeSpan.innerText = "Syncing...";
+         cacheBadge.className = "badge warn";
       }
     }
     updateCacheStatus();
