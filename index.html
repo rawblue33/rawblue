@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" manifest="cache.appcache">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAW GAME | System Initialization</title>
+<link rel="icon" type="image/png" href="logo_raw.PNG">
+<link rel="apple-touch-icon" href="logo_raw.PNG">
+<style>
+  :root {
+    --bg-deep: #050505;
+    --card-bg: rgba(20, 20, 22, 0.75);
+    --border-light: rgba(255, 255, 255, 0.08);
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --accent-blue: #3b82f6;
+    --accent-blue-glow: rgba(59, 130, 246, 0.4);
+    --status-ok: #10b981;
+    --status-ok-bg: rgba(16, 185, 129, 0.15);
+    --status-warn: #f59e0b;
+    --status-bad: #ef4444;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; padding: 0; min-height: 100vh;
+    background-color: var(--bg-deep); color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Animated Grid Background */
+  .bg-grid {
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  }
+
+  .container { width: 100%; max-width: 500px; padding: 24px; position: relative; z-index: 1; }
+
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+  }
+
+  #brand {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    padding: 24px; border-bottom: 1px solid var(--border-light);
+    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+  }
+  #brand img { 
+    width: 36px; height: 36px; border-radius: 50%; 
+    box-shadow: 0 0 15px var(--accent-blue-glow);
+  }
+  #brand b { font-size: 18px; font-weight: 700; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; }
+
+  #wrap { padding: 32px 24px; text-align: center; }
+  
+  #state { 
+    font-size: 22px; font-weight: 600; margin: 0 0 16px; letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #fff, #a1a1aa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  
+  #det { font-size: 14px; color: var(--text-secondary); margin: 0 0 24px; line-height: 1.6; }
+  
+  /* Styling injected bold tags as modern badges */
+  #det b { 
+    color: var(--status-ok); background: var(--status-ok-bg);
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em; margin: 0 4px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  #cache { 
+    font-size: 13px; font-weight: 500; color: var(--text-secondary); 
+    padding: 10px 20px; border-radius: 8px; background: rgba(0,0,0,0.4);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: 1px solid var(--border-light); transition: all 0.3s ease;
+  }
+  #cache.cacheok { 
+    color: var(--accent-blue); border-color: var(--accent-blue-glow); 
+    background: rgba(59, 130, 246, 0.1); box-shadow: 0 0 10px var(--accent-blue-glow);
+  }
+  
+  .bad { color: var(--status-bad) !important; -webkit-text-fill-color: var(--status-bad) !important; } 
+  .warn { color: var(--status-warn) !important; -webkit-text-fill-color: var(--status-warn) !important; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<div class="container">
+  <div class="glass-card">
+    <div id="brand">
+      <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-radius: 50%;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#09090b" />
+    </linearGradient>
+    <!-- Glowing Blue Gradient -->
+    <linearGradient id="glowBlue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Base -->
+  <circle cx="50" cy="50" r="50" fill="url(#bgGrad)" stroke="#27272a" stroke-width="2"/>
+  
+  <!-- Outer Shield/Ring (Broken at top right) -->
+  <path d="M50 20 A30 30 0 1 0 80 50" stroke="url(#glowBlue)" stroke-width="6" stroke-linecap="round" filter="url(#neonGlow)"/>
+  
+  <!-- Inner Core Arrow pointing out the break -->
+  <path d="M40 60 L60 40 M60 40 L45 35 M60 40 L65 55" stroke="#f4f4f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+      <b>RAW BLUE</b>
+    </div>
+    <div id="wrap">
+      <div id="state">Detecting Environment...</div>
+      <div id="det"></div>
+      <div id="cache">Initializing Cache Module</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+    var stateEl = document.getElementById("state");
+    var detEl = document.getElementById("det");
+    var cacheEl = document.getElementById("cache");
+    function setState(t, c) { stateEl.textContent = t; stateEl.className = c || ""; }
+    function setCache(t, ok) { cacheEl.textContent = t; cacheEl.className = ok ? "cacheok" : ""; }
+    var params = new URLSearchParams(location.search);
+
+    var SUPPORTED = { 1302: 1, 1304: 1, 1350: 1, 1352: 1 };
+
+    var key = null, fwnum = null;
+    var m = /PlayStation\s+4[\/ ](\d+)\.(\d+)/.exec(navigator.userAgent);
+    if (m) {
+        var ms = parseInt(m[2], 16).toString(16);
+        if (ms.length < 2) ms = "0" + ms;
+        key = m[1] + "." + ms;
+        fwnum = parseInt(m[1], 10) * 100 + parseInt(ms, 10);
+    }
+
+    var forced = params.get("force") === "1";
+    var supported = forced || (fwnum !== null && SUPPORTED[fwnum] === 1);
+    
+    // Injecting HTML styled by CSS to look like premium badges
+    detEl.innerHTML = "Firmware <b>" + (key || "Unknown") + "</b>"
+        + (supported ? " <b>Supported</b>"
+                     : " <b style='color:var(--status-bad);background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2)'>Unsupported</b>");
+
+    var target = "jb.html" + location.search;
+    function go() { setState("Loading Payload...", "warn"); location.replace(target); }
+
+    function waitForTap(msg, action) {
+        setState(msg, "warn");
+        function fire() {
+            window.removeEventListener("click", fire);
+            window.removeEventListener("keydown", fire);
+            action();
+        }
+        window.addEventListener("click", fire);
+        window.addEventListener("keydown", fire);
+    }
+
+    if (!supported) {
+        setState("Execution Halted", "bad");
+        waitForTap("UNSUPPORTED OS (" + (key || "unknown") + ") — Tap to override", go);
+        return;
+    }
+
+    var ac = window.applicationCache;
+    if (!ac || !document.documentElement.hasAttribute("manifest")) {
+        go();
+    } else if (!navigator.onLine) {
+        setCache("Offline Mode Active", true);
+        go();
+    } else if (ac.status === ac.IDLE) {
+        setCache("System Cached", true);
+        go();
+    } else if (ac.status === ac.UPDATEREADY) {
+        try { ac.swapCache(); } catch (e) {}
+        setCache("Update Ready", true);
+        waitForTap("NEW VERSION STAGED — Tap to reload", function () { location.reload(); });
+    } else {
+        setCache("Verifying integrity...");
+        ac.addEventListener("downloading", function () { setCache("Caching payload assets..."); }, false);
+        ac.addEventListener("progress", function (e) {
+            if (e && e.total) setCache("Caching " + Math.round((e.loaded / e.total) * 100) + "%");
+        }, false);
+        ac.addEventListener("cached", function () {
+            setCache("Assets secured", true);
+            waitForTap("SYSTEM READY — Tap to execute", go);
+        }, false);
+        ac.addEventListener("updateready", function () {
+            try { ac.swapCache(); } catch (e) {}
+            setCache("Update acquired", true);
+            waitForTap("NEW VERSION STAGED — Tap to reload", function () { location.reload(); });
+        }, false);
+        ac.addEventListener("noupdate", function () {
+            setCache("Integrity verified", true);
+            go();
+        }, false);
+        ac.addEventListener("error", function () {
+            setCache("Network error");
+            waitForTap("CACHE SYNC FAILED — Tap to proceed", go);
+        }, false);
+        ac.addEventListener("obsolete", function () {
+            setCache("Manifest expired");
+            waitForTap("CACHE OBSOLETE — Tap to proceed", go);
+        }, false);
+    }
+})();
+</script>
+</body>
+</html>

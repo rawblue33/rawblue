@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en" manifest="cache.appcache">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RAW GAME | Payload Execution</title>
+  <link rel="icon" type="image/png" href="logo_raw.PNG">
+  <link rel="apple-touch-icon" href="logo_raw.PNG">
+  <style>
+    :root {
+      --bg-deep: #050505;
+      --card-bg: rgba(20, 20, 22, 0.75);
+      --term-bg: rgba(0, 0, 0, 0.6);
+      --border-light: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(59, 130, 246, 0.5);
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-blue-glow: rgba(59, 130, 246, 0.4);
+      --status-ok: #10b981;
+      --status-warn: #f59e0b;
+      --status-bad: #ef4444;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    html, body {
+      margin: 0; padding: 0; min-height: 100vh;
+      background: var(--bg-deep); color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    
+    /* Animated Grid Background */
+    .bg-grid {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+      background-image: 
+        linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+      -webkit-mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
+    }
+
+    .container { 
+      width: 100%; max-width: 480px; padding: 24px; 
+      position: relative; z-index: 1; transition: max-width 0.3s ease; 
+    }
+    body.log .container { max-width: 1000px; height: 100vh; padding: 24px; display: flex; flex-direction: column; justify-content: center; }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    #brand {
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      padding: 24px; border-bottom: 1px solid var(--border-light);
+      background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    }
+    #brand img { 
+      width: 36px; height: 36px; border-radius: 50%; 
+      box-shadow: 0 0 15px var(--accent-blue-glow);
+    }
+    #brand b { font-size: 18px; font-weight: 700; letter-spacing: 0.15em; color: #fff; text-transform: uppercase; }
+
+    /* Launcher Block */
+    #launcher { padding: 40px 32px; text-align: center; }
+    #launcher h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
+    #launcher p { margin: 0 0 28px; font-size: 14px; color: var(--text-secondary); }
+    
+    .btn {
+      background: var(--accent-blue); color: #fff; border: none; border-radius: 10px;
+      padding: 16px 24px; font-size: 15px; font-weight: 600; cursor: pointer;
+      width: 100%; transition: all 0.2s ease; letter-spacing: 0.05em;
+      box-shadow: 0 4px 12px var(--accent-blue-glow); text-transform: uppercase;
+    }
+    .btn:hover { background: var(--accent-blue-hover); transform: translateY(-1px); }
+    .btn:active { transform: translateY(1px); box-shadow: none; }
+    
+    .btn-cancel {
+      background: transparent; border: 1px solid var(--border-light); color: var(--text-primary);
+      box-shadow: none; display: none; margin-bottom: 16px;
+    }
+    .btn-cancel:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+    /* Custom Progress Bar for Auto-run */
+    .progress-track {
+      width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+      border-radius: 4px; overflow: hidden; margin-top: -4px; margin-bottom: 20px;
+      display: none;
+    }
+    .progress-fill {
+      height: 100%; background: var(--status-bad); width: 100%;
+      transform-origin: left; transition: width 1s linear;
+    }
+
+    .checkbox-wrapper {
+      margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 10px;
+      font-size: 14px; color: var(--text-secondary); cursor: pointer; user-select: none;
+    }
+    .checkbox-wrapper input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; border: 1px solid var(--border-focus); border-radius: 4px;
+      background: rgba(0,0,0,0.2); cursor: pointer; position: relative; transition: all 0.2s;
+    }
+    .checkbox-wrapper input[type="checkbox"]:checked { background: var(--accent-blue); border-color: var(--accent-blue); }
+    .checkbox-wrapper input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px;
+      border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg);
+    }
+
+    /* Execution UI Block */
+    #execution-ui { 
+      padding: 64px 32px; text-align: center; 
+      display: none; flex-direction: column; align-items: center; gap: 24px;
+    }
+
+    #spin {
+      width: 48px; height: 48px; 
+      border: 3px solid rgba(255,255,255,0.05); border-top-color: var(--accent-blue);
+      border-radius: 50%; animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+      box-shadow: 0 0 20px var(--accent-blue-glow);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #msg { font-size: 16px; font-weight: 500; letter-spacing: 0.05em; display: none; }
+    
+    /* JS Dynamic States mapping to Execution UI */
+    body.done #spin, body.fail #spin { display: none; }
+    body.fail #msg, body.done #msg { display: block; }
+    body.fail #msg { color: var(--status-bad); }
+    body.done #msg { color: var(--status-ok); font-weight: 600; letter-spacing: 0.1em; }
+
+    /* Terminal Log View Block (?log=1) */
+    #wrap { padding: 24px; display: none; flex-direction: column; height: 60vh; min-height: 400px; }
+    
+    body.log #launcher, body.log #execution-ui, body.log .bg-grid { display: none !important; }
+    body.log #wrap { display: flex; }
+    body.log #state { display: block; font-size: 20px; font-weight: 600; margin: 0 0 16px; color: #fff; }
+    body.log #out {
+      display: block; flex: 1; overflow-y: auto; white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
+      font-size: 13px; line-height: 1.6; color: #d4d4d8;
+      background: var(--term-bg); border: 1px solid var(--border-light);
+      border-radius: 12px; padding: 20px; box-shadow: inset 0 2px 16px rgba(0,0,0,0.8);
+    }
+    
+    /* Custom Scrollbar for Terminal */
+    body.log #out::-webkit-scrollbar { width: 8px; }
+    body.log #out::-webkit-scrollbar-track { background: transparent; }
+    body.log #out::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    body.log #out::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+    /* Terminal Syntax Colors */
+    .ok, .safe { color: var(--status-ok); }
+    .bad, .danger { color: var(--status-bad); }
+    .warn { color: var(--status-warn); }
+    code { color: #60a5fa; background: rgba(96, 165, 250, 0.1); padding: 2px 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <div class="container">
+    <div class="glass-card">
+      <div id="brand">
+        <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-radius: 50%;">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#18181b" />
+      <stop offset="100%" stop-color="#09090b" />
+    </linearGradient>
+    <!-- Glowing Blue Gradient -->
+    <linearGradient id="glowBlue" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Base -->
+  <circle cx="50" cy="50" r="50" fill="url(#bgGrad)" stroke="#27272a" stroke-width="2"/>
+  
+  <!-- Outer Shield/Ring (Broken at top right) -->
+  <path d="M50 20 A30 30 0 1 0 80 50" stroke="url(#glowBlue)" stroke-width="6" stroke-linecap="round" filter="url(#neonGlow)"/>
+  
+  <!-- Inner Core Arrow pointing out the break -->
+  <path d="M40 60 L60 40 M60 40 L45 35 M60 40 L65 55" stroke="#f4f4f5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+        <b>RAW BLUE</b>
+      </div>
+
+      <!-- Launcher State -->
+      <div id="launcher">
+        <h2>System Ready</h2>
+        <p>Target payload staged for execution.</p>
+        
+        <button class="btn" id="btn-run">INITIATE EXPLOIT</button>
+        <button class="btn btn-cancel" id="btn-cancel">Cancel Launch (3)</button>
+        
+        <div class="progress-track" id="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        
+        <label class="checkbox-wrapper">
+          <input type="checkbox" id="chk-autorun"> Enable automatic execution
+        </label>
+      </div>
+
+      <!-- Executing State -->
+      <div id="execution-ui">
+        <div id="spin"></div>
+        <div id="msg">Restart your console</div>
+      </div>
+
+      <!-- Log Terminal State -->
+      <div id="wrap">
+        <div id="state"></div>
+        <div id="out"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    const launcher = document.getElementById('launcher');
+    const executionUI = document.getElementById('execution-ui');
+    const btnRun = document.getElementById('btn-run');
+    const btnCancel = document.getElementById('btn-cancel');
+    const chkAutorun = document.getElementById('chk-autorun');
+    const progressTrack = document.getElementById('progress-track');
+    const progressFill = document.getElementById('progress-fill');
+
+    const autoRunEnabled = localStorage.getItem('rawgame_autorun') === '1';
+    let countdownTimer;
+    let timeLeft = 3;
+
+    function startJailbreak() {
+      launcher.style.display = 'none';
+      executionUI.style.display = 'flex';
+      // Dynamically load the core logic
+      import("./jb.js?v=19");
+    }
+
+    // Attach the launch listener globally so it works even if auto-run is cancelled
+    btnRun.addEventListener('click', () => {
+      if (chkAutorun.checked) {
+        localStorage.setItem('rawgame_autorun', '1');
+      } else {
+        localStorage.setItem('rawgame_autorun', '0');
+      }
+      startJailbreak();
+    });
+
+    if (autoRunEnabled) {
+      launcher.style.display = 'block';
+      
+      btnRun.style.display = 'none'; 
+      btnCancel.style.display = 'block';
+      progressTrack.style.display = 'block';
+      chkAutorun.checked = true;
+
+      // Start progress bar animation
+      setTimeout(() => { progressFill.style.width = '0%'; }, 50);
+
+      countdownTimer = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+          clearInterval(countdownTimer);
+          startJailbreak();
+        } else {
+          btnCancel.innerText = `Cancel Launch (${timeLeft})`;
+        }
+      }, 1000);
+
+      btnCancel.addEventListener('click', () => {
+        clearInterval(countdownTimer);
+        localStorage.setItem('rawgame_autorun', '0');
+        chkAutorun.checked = false;
+        
+        btnCancel.style.display = 'none';
+        progressTrack.style.display = 'none';
+        btnRun.style.display = 'block';
+      });
+
+    } else {
+      launcher.style.display = 'block';
+      btnRun.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
